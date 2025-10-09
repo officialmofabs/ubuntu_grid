@@ -1,0 +1,8 @@
+node_modules/
+workspace/
+sharepoint/node_modules/
+powerapps/node_modules/
+teams/node_modules/
+functions/bin/
+functions/obj/
+dashboard/node_modules/

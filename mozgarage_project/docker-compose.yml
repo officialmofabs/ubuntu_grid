@@ -1,0 +1,75 @@
+version: '3.9'
+services:
+  apache-proxy:
+    image: httpd:2.4
+    container_name: moz_apache_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./apache/conf/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+      - ./apache/sites:/usr/local/apache2/conf/sites:ro
+      - ./certs:/etc/letsencrypt
+      - ./apache/logs:/usr/local/apache2/logs
+    depends_on:
+      - ecampus
+      - parish
+      - mofabs
+
+  ecampus:
+    image: nginx:alpine
+    container_name: moz_ecampus
+    restart: unless-stopped
+    volumes:
+      - ./ecampus:/usr/share/nginx/html:ro
+
+  parish:
+    image: nginx:alpine
+    container_name: moz_parish
+    restart: unless-stopped
+    volumes:
+      - ./parish:/usr/share/nginx/html:ro
+
+  mofabs:
+    image: nginx:alpine
+    container_name: moz_mofabs
+    restart: unless-stopped
+    volumes:
+      - ./mofabs:/usr/share/nginx/html:ro
+
+  certbot:
+    image: certbot/dns-cloudflare
+    container_name: moz_certbot
+    environment:
+      - CF_API_TOKEN=YOUR_CLOUDFLARE_API_TOKEN
+    volumes:
+      - ./certs:/etc/letsencrypt
+      - ./cloudflare.ini:/root/.secrets/certbot/cloudflare.ini
+    command: certbot renew --dns-cloudflare --dns-cloudflare-credentials /root/.secrets/certbot/cloudflare.ini
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 3600
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+networks:
+  default:
+    driver: bridge

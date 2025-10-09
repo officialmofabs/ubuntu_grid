@@ -1,0 +1,35 @@
+name: Deploy static + trigger remote update
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync static files to remote
+        uses: burnett01/rsync-deployments@v4
+        with:
+          switches: -avz --delete
+          path: ./
+          remote_path: "/opt/mozgarage/sites/REPLACE_SITE_FOLDER"
+          remote_host: YOUR_SSH_HOST
+          remote_user: YOUR_SSH_USER
+          remote_port: 22
+        env:
+          RSYNC_RSH: "ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no -p 22"
+
+      - name: Trigger server stack update
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: YOUR_SSH_HOST
+          username: YOUR_SSH_USER
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /opt/mozgarage
+            docker-compose pull || true
+            docker-compose up -d --remove-orphans
+            docker image prune -f || true

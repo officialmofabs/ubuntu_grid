@@ -1,0 +1,34 @@
+---
+- name: Provision MozGarage VPS
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install essentials
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - fail2ban
+          - ufw
+        state: present
+
+    - name: Configure firewall
+      ufw:
+        rule: allow
+        port: [22,80,443]
+        proto: tcp
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    - name: Setup deploy directory
+      file:
+        path: /opt/mozgarage
+        state: directory
+        owner: {{ ansible_user }}

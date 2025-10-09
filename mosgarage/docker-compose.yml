@@ -1,0 +1,106 @@
+version: "3.9"
+
+networks:
+  mifi-net:
+    driver: bridge
+  wg-net:
+    external: true
+
+services:
+  dev-core:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    container_name: dev-core
+    networks: [mifi-net, wg-net]
+    expose:
+      - "8080"
+    volumes:
+      - ./workspace:/workspace
+    command: >
+      sh -c "apt-get update &&
+             apt-get install -y azure-cli git curl ca-certificates gnupg -y &&
+             curl -sL https://aka.ms/InstallAzureDevCLI | bash || true &&
+             curl -fsSL https://code-server.dev/install.sh | sh || true &&
+             /usr/bin/code-server --bind-addr 0.0.0.0:8080 /workspace"
+
+  sharepoint-dev:
+    image: node:18
+    container_name: sharepoint-dev
+    networks: [mifi-net, wg-net]
+    expose:
+      - "9001"
+    volumes:
+      - ./sharepoint:/workspace/sharepoint
+    working_dir: /workspace/sharepoint
+    command: >
+      sh -c "npm install -g yo gulp @microsoft/generator-sharepoint http-server || true &&
+             npx http-server -p 9001 /workspace/sharepoint"
+
+  powerapps-dev:
+    image: mcr.microsoft.com/powershell
+    container_name: powerapps-dev
+    networks: [mifi-net, wg-net]
+    expose:
+      - "9002"
+    volumes:
+      - ./powerapps:/workspace/powerapps
+    working_dir: /workspace/powerapps
+    command: >
+      pwsh -c "iwr https://aka.ms/pac/install -useb | iex; Start-Sleep -Seconds 3600"
+
+  teams-dev:
+    image: node:18
+    container_name: teams-dev
+    networks: [mifi-net, wg-net]
+    expose:
+      - "9003"
+    volumes:
+      - ./teams:/workspace/teams
+    working_dir: /workspace/teams
+    command: >
+      sh -c "npm install -g @microsoft/teamsfx-cli http-server || true &&
+             npx http-server -p 9003 /workspace/teams"
+
+  functions-dev:
+    image: mcr.microsoft.com/azure-functions/dotnet:4
+    container_name: functions-dev
+    networks: [mifi-net, wg-net]
+    expose:
+      - "9004"
+    volumes:
+      - ./functions:/workspace/functions
+    working_dir: /workspace/functions
+    command: >
+      sh -c "func start --port 9004 || tail -f /dev/null"
+
+  dashboard:
+    image: nginx:alpine
+    container_name: mosgarage-dashboard
+    networks: [mifi-net, wg-net]
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+
+  dashboard-api:
+    build: ./dashboard/api
+    container_name: mosgarage-api
+    networks: [mifi-net, wg-net]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3000:3000"
+
+  caddy:
+    image: caddy:2
+    container_name: mosgarage-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: [mifi-net, wg-net]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

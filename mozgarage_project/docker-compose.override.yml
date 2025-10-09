@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  ecampus:
+    environment:
+      - DEV_MODE=true
+  code_server:
+    image: codercom/code-server:latest
+    container_name: moz_code_server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/home/coder/project
+    environment:
+      - PASSWORD=ChangeMe123

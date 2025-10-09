@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  caddy:
+    extra_hosts:
+      - "localhost:host-gateway"
+      - "ide.localhost:host-gateway"
+      - "sharepoint.localhost:host-gateway"
+      - "powerapps.localhost:host-gateway"
+      - "teams.localhost:host-gateway"
+      - "functions.localhost:host-gateway"

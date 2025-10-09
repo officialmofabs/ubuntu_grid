@@ -1,0 +1,29 @@
+localhost {
+    reverse_proxy dashboard:80
+    tls internal
+}
+
+ide.localhost {
+    reverse_proxy dev-core:8080
+    tls internal
+}
+
+sharepoint.localhost {
+    reverse_proxy sharepoint-dev:9001
+    tls internal
+}
+
+powerapps.localhost {
+    reverse_proxy powerapps-dev:9002
+    tls internal
+}
+
+teams.localhost {
+    reverse_proxy teams-dev:9003
+    tls internal
+}
+
+functions.localhost {
+    reverse_proxy functions-dev:9004
+    tls internal
+}
